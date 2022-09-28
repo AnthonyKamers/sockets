@@ -1,0 +1,4 @@
+/home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/cmake-build-debug/CMakeFiles/server.dir
+/home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/cmake-build-debug/CMakeFiles/client.dir
+/home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/cmake-build-debug/CMakeFiles/rebuild_cache.dir
