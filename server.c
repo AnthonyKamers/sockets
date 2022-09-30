@@ -3,8 +3,27 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define TRUE 1
+#define NUM_LINES 20
+#define LINE_SIZE 256
+#define MAX_CLIENTS 10
+
+void *socket_thread(void *args) {
+    int client_socket = *(int *)args;
+    char str_in[1024];
+
+    while (TRUE) {
+        read(client_socket, &str_in, 1024);
+
+        printf("A resposta foi: %s\n", str_in);
+        char response = '0';
+        write(client_socket, &response, 1);
+    }
+
+    return NULL;
+}
 
 int main() {
     int server_socket, client_socket;
@@ -12,7 +31,6 @@ int main() {
     int bind_socket;
     struct sockaddr_in server_address;
     struct sockaddr_in client_address;
-    char str_in[1024];
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -28,19 +46,25 @@ int main() {
         exit(1);
     }
 
-    listen(server_socket, 10);
+    listen(server_socket, MAX_CLIENTS);
     while(TRUE) {
         printf("Server is waiting for connection\n");
 
         client_length = sizeof(client_address);
         client_socket = accept(server_socket, (struct sockaddr *)&client_address, (unsigned int *)&client_length);
 
-        read(client_socket, &str_in, 1024);
+        // create thread that will be responsible for this socket
+        pthread_t thread_socket;
+        int thread = pthread_create(&thread_socket, NULL, &socket_thread, (void *)&client_socket);
+        if (thread) {
+            printf("Error on socket thread creating");
+        }
 
-        char response = '0';
-        write(client_socket, &response, 1);
+//        read(client_socket, &str_in, 1024);
+//        char response = '0';
+//        write(client_socket, &response, 1);
 
-        printf("It was passed to the server: %s\n", str_in);
+//        printf("It was passed to the server: %s\n", str_in);
 //        close(client_socket);
     }
 }
