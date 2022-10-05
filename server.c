@@ -4,26 +4,81 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define TRUE 1
 #define NUM_LINES 20
 #define LINE_SIZE 256
 #define MAX_CLIENTS 10
 
+sem_t semaforo;
+
 void *socket_thread(void *args) {
     int client_socket = *(int *)args;
-    char str_in[1024];
+//    char str_in[1024];
 
     while (TRUE) {
-        read(client_socket, &str_in, 1024);
+//        read(client_socket, &str_in, 1024);
 
-        printf("A resposta foi: %s\n", str_in);
-        char response = '0';
-        write(client_socket, &response, 1);
+//        printf("A resposta foi: %s\n", str_in);
+//        char response = '0';
+//        write(client_socket, &response, 1);
+
+
+/*  // adicionado sem testar ainda kk
+
+        char command_in[256];
+        read(client_socket, &command_in, sizeof(command_in));
+        
+        if(command_in == 'sair'){              // close connection by the client
+            
+            // pthread_cancel(&thread_socket);
+            close(client_socket);
+            sem_post(&semaforo);
+
+        } else if (command_in == 'get_line'){  // get line command    
+            char intindex[256];
+            read(client_socket, &intindex, sizeof(intindex));
+
+            int indexLine = (int)&intindex;
+            char line[1024];    // talvez um buffer com linhas? 
+            
+            // pegar a linha no index
+            // line = get_line(indexLine);
+			write(client_socket, &line, sizeof(line));
+
+
+        } else if (command_in == 'add_line'){  // add line command
+            char intindex[256];
+            read(client_socket, &intindex, sizeof(intindex));   // primeiro o index depois o conteudo
+            int indexLine = (int)&intindex;
+
+            char line[1024];
+            read(client_socket, &line, sizeof(line));
+
+            // add_line(int intindex, char line)
+
+        }
+
+*/
+
+
     }
 
     return NULL;
 }
+
+
+/* 
+char get_line(int index){
+
+}
+
+void add_line(int index, char letra){
+
+}
+
+*/
 
 int main() {
     int server_socket, client_socket;
@@ -47,8 +102,12 @@ int main() {
     }
 
     listen(server_socket, MAX_CLIENTS);
+	sem_init(&semaforo, 0, MAX_CLIENTS);    // inicia o semaforo
+    
     while(TRUE) {
         printf("Server is waiting for connection\n");
+
+        sem_wait(&semaforo);    // ver se tem vaga
 
         client_length = sizeof(client_address);
         client_socket = accept(server_socket, (struct sockaddr *)&client_address, (unsigned int *)&client_length);
@@ -60,11 +119,20 @@ int main() {
             printf("Error on socket thread creating");
         }
 
-//        read(client_socket, &str_in, 1024);
+
+
 //        char response = '0';
 //        write(client_socket, &response, 1);
 
 //        printf("It was passed to the server: %s\n", str_in);
 //        close(client_socket);
+
     }
+
+        
+	sem_destroy(&semaforo);
+
+	close(server_socket);
+
+    return 0;
 }
