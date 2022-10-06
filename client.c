@@ -54,10 +54,10 @@ int main() {
 
     printf("Client program to communicate with the server\n");
     printf("Commands: \n"
-           "0 - Connect to the server \n"
-           "1=TEXT(str) - Add something to the file \n"
-           "2=LINE_FILE(int) - Get some line of the file \n"
-           "3 - Exit the server\n");
+           "0                           - Connect to the server \n"
+           "1,INDEX,TEXT -> int,int,str - Add something to the file \n"
+           "2,INDEX      -> int,int     - Get some line of the file \n"
+           "3                           - Exit the server\n");
 
     while (TRUE) {
         printf("\n\nType your command: ");
@@ -78,9 +78,7 @@ int main() {
                 break;
             case '1':
             case '2':
-                printf("Vai mandar texto \n");
                 write_text((char *) &user_input, client_socket);
-                printf("mandou texto \n");
                 break;
             case '3':
                 close(client_socket);
@@ -95,11 +93,4 @@ int main() {
     }
 
     exit(0);
-
-
-//    write(client_socket, &str, 1024);
-//    read(client_socket, &str, 1024);
-//    printf("Message from server: %s\n", str);
-//    close(client_socket);
-//    exit(0);
 }

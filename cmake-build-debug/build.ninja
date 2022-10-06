@@ -51,7 +51,7 @@ build cmake_object_order_depends_target_server: phony || CMakeFiles/server.dir
 
 build CMakeFiles/server.dir/server.c.o: C_COMPILER__server_Debug /home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/server.c || cmake_object_order_depends_target_server
   DEP_FILE = CMakeFiles/server.dir/server.c.o.d
-  FLAGS = -g -std=gnu99
+  FLAGS = -pthread -g -std=gnu99
   OBJECT_DIR = CMakeFiles/server.dir
   OBJECT_FILE_DIR = CMakeFiles/server.dir
 
@@ -64,7 +64,7 @@ build CMakeFiles/server.dir/server.c.o: C_COMPILER__server_Debug /home/anthony_k
 # Link the executable server
 
 build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o
-  FLAGS = -g
+  FLAGS = -pthread -g
   OBJECT_DIR = CMakeFiles/server.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -82,7 +82,7 @@ build cmake_object_order_depends_target_client: phony || CMakeFiles/client.dir
 
 build CMakeFiles/client.dir/client.c.o: C_COMPILER__client_Debug /home/anthony_kamers/Desktop/UFSC/2022.2/distribuida/labs/sockets/client.c || cmake_object_order_depends_target_client
   DEP_FILE = CMakeFiles/client.dir/client.c.o.d
-  FLAGS = -g -std=gnu99
+  FLAGS = -pthread -g -std=gnu99
   OBJECT_DIR = CMakeFiles/client.dir
   OBJECT_FILE_DIR = CMakeFiles/client.dir
 
@@ -95,7 +95,7 @@ build CMakeFiles/client.dir/client.c.o: C_COMPILER__client_Debug /home/anthony_k
 # Link the executable client
 
 build client: C_EXECUTABLE_LINKER__client_Debug CMakeFiles/client.dir/client.c.o
-  FLAGS = -g
+  FLAGS = -pthread -g
   OBJECT_DIR = CMakeFiles/client.dir
   POST_BUILD = :
   PRE_LINK = :
