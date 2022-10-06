@@ -26,6 +26,13 @@ parse_t *parse_text(char *text) {
     char DELIMITER = ',';
     parse_t *parse = malloc(sizeof *parse);
 
+    if (text[0] == '3') {
+        parse->op = 3;
+        parse->index = 0;
+        parse->text = "";
+        return parse;
+    }
+
     char *token = strtok(text, &DELIMITER);
     parse->op = atoi(token);
 
@@ -111,6 +118,7 @@ void *socket_thread(void *args) {
         if (parse->index > NUM_LINES || parse->index < 0) {
             response[0] = '3';
             write(client_socket, &response, LINE_SIZE+1);
+            free(parse);
             continue;
         }
 
@@ -127,7 +135,7 @@ void *socket_thread(void *args) {
                 pthread_mutex_unlock(&mutex);
                 break;
             case 3:
-                pthread_exit(NULL);
+                return NULL;
         }
 
         // treat answer
@@ -137,6 +145,7 @@ void *socket_thread(void *args) {
         } else
             response[0] = '2';
 
+        free(parse);
         write(client_socket, &response, LINE_SIZE+1);
     }
 }

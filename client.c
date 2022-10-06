@@ -50,11 +50,18 @@ void write_to_server(char *text, int client_socket) {
             // error reading
             printf("Error reading line of the file \n");
         case '3':
+            // error index out of range
             printf("Line index not in the range of the file \n");
         default:
+            // default error
             printf("Unexpected error. \n");
             break;
     }
+}
+
+void exit_server(int client_socket) {
+    char text[1024] = "3";
+    write(client_socket, text, 1024);
 }
 
 int main() {
@@ -91,6 +98,8 @@ int main() {
                 write_to_server((char *) &user_input, client_socket);
                 break;
             case '3':
+                user_input[0] = '3';
+                exit_server(client_socket);
                 close(client_socket);
                 exit_now = TRUE;
                 break;
