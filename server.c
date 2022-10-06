@@ -4,15 +4,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <string.h>
 
 #define TRUE 1
 #define NUM_LINES 20
-#define LINE_SIZE 256
+#define LINE_SIZE 255
 #define MAX_CLIENTS 10
 
-sem_t semaforo;
+pthread_mutex_t mutex ;
+
+char *FILENAME = "file.txt";
+char *TEMPFILE = "temp.tmp";
 
 typedef struct parse {
     int op;
@@ -36,19 +38,63 @@ parse_t *parse_text(char *text) {
     return parse;
 }
 
-void *write_thread(void *args) {
-    parse_t *parse = (parse_t *)args;
+char *read_file(parse_t *parse) {
     FILE *file;
-    file = fopen("file.txt", "w");
+    char line[LINE_SIZE];
+    file = fopen(FILENAME, "r");
 
     if (file == NULL) {
-        printf("There was an error opening the file \n");
-        pthread_exit(NULL);
+        printf("There was an error opening the file. File does not exist \n");
+        file = fopen(FILENAME, "w");
+    }
+
+    int i = 0;
+    while ((fgets(line, LINE_SIZE, file)) != NULL) {
+        i++;
+        if (i == parse->index)
+            return strdup(line);
     }
 
     fclose(file);
-
     return NULL;
+}
+
+char *write_file(parse_t *parse) {
+    FILE *file;
+    FILE *file_temp;
+    char line[LINE_SIZE];
+    int count = 0;
+
+    file = fopen(FILENAME, "r");
+    file_temp = fopen(TEMPFILE, "w");
+    if (file_temp == NULL || file == NULL) {
+        printf("There was an error opening files. \n");
+        return NULL;
+    }
+
+    while ((fgets(line, LINE_SIZE, file)) != NULL) {
+        count++;
+
+        if (count == parse->index) {
+            fputs(strcat(parse->text, "\n"), file_temp);
+        } else {
+            fputs(line, file_temp);
+        }
+    }
+
+    // close files
+    fclose(file);
+    fclose(file_temp);
+
+    // delete original source
+    remove(FILENAME);
+
+    // rename temp to original file
+    rename(TEMPFILE, FILENAME);
+
+    char *response = "1";
+
+    return response;
 }
 
 void *socket_thread(void *args) {
@@ -56,84 +102,60 @@ void *socket_thread(void *args) {
     char str_in[1024];
 
     while (TRUE) {
-
-//        read(client_socket, &str_in, 1024);
-
-//        printf("A resposta foi: %s\n", str_in);
-//        char response = '0';
-//        write(client_socket, &response, 1);
-
-
-/*  // adicionado sem testar ainda kk
-
-        char command_in[256];
-        read(client_socket, &command_in, sizeof(command_in));
-        
-        if(command_in == 'sair'){              // close connection by the client
-            
-            // pthread_cancel(&thread_socket);
-            close(client_socket);
-            sem_post(&semaforo);
-
-        } else if (command_in == 'get_line'){  // get line command    
-            char intindex[256];
-            read(client_socket, &intindex, sizeof(intindex));
-
-            int indexLine = (int)&intindex;
-            char line[1024];    // talvez um buffer com linhas? 
-            
-            // pegar a linha no index
-            // line = get_line(indexLine);
-			write(client_socket, &line, sizeof(line));
-
-
-        } else if (command_in == 'add_line'){  // add line command
-            char intindex[256];
-            read(client_socket, &intindex, sizeof(intindex));   // primeiro o index depois o conteudo
-            int indexLine = (int)&intindex;
-
-            char line[1024];
-            read(client_socket, &line, sizeof(line));
-
-            // add_line(int intindex, char line)
-
-        }
-
-*/
-
-
         read(client_socket, &str_in, 1024);
         parse_t *parse = parse_text(str_in);
+        char *result = NULL;
+        char response[LINE_SIZE+1];
 
+        // index out of range
+        if (parse->index > NUM_LINES || parse->index < 0) {
+            response[0] = '3';
+            write(client_socket, &response, LINE_SIZE+1);
+            continue;
+        }
+
+        // parse by op code
         switch (parse->op) {
             case 1:
-                // write to file
+                pthread_mutex_lock(&mutex);
+                    result = write_file(parse);
+                pthread_mutex_unlock(&mutex);
                 break;
             case 2:
-                // read from file
+                pthread_mutex_lock(&mutex);
+                    result = read_file(parse);
+                pthread_mutex_unlock(&mutex);
                 break;
             case 3:
                 pthread_exit(NULL);
         }
 
-        char response = '0';
-        write(client_socket, &response, 1);
+        // treat answer
+        if (result != NULL) {
+            response[0] = parse->op == 1 ? '0' : '1';
+            strcpy(response+1, result);
+        } else
+            response[0] = '2';
+
+        write(client_socket, &response, LINE_SIZE+1);
     }
-
-    return NULL;
 }
 
+void create_empty_file() {
+    FILE *file;
+    char *content = "\n";
 
-/* 
-char get_line(int index){
+    file = fopen(FILENAME, "r");
 
+    // test if file already exists
+    if (file == NULL) {
+        file = fopen(FILENAME, "w");
+        for (int i = 0; i < NUM_LINES-1; i++) {
+            fputs(content, file);
+        }
+        fclose(file);
+    }
 }
-
-void add_line(int index, char letra){
-
-}
-
-*/
 
 int main() {
     int server_socket, client_socket;
@@ -141,6 +163,12 @@ int main() {
     int bind_socket;
     struct sockaddr_in server_address;
     struct sockaddr_in client_address;
+
+    // create empty file, if it is already not created
+    create_empty_file();
+
+    // initialize mutex
+    pthread_mutex_init(&mutex, NULL);
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -157,12 +185,9 @@ int main() {
     }
 
     listen(server_socket, MAX_CLIENTS);
-	sem_init(&semaforo, 0, MAX_CLIENTS);    // inicia o semaforo
-    
+
     while(TRUE) {
         printf("Server is waiting for connection\n");
-
-        sem_wait(&semaforo);    // ver se tem vaga
 
         client_length = sizeof(client_address);
         client_socket = accept(server_socket, (struct sockaddr *)&client_address, (unsigned int *)&client_length);
@@ -173,21 +198,9 @@ int main() {
         if (thread) {
             printf("Error on socket thread creating");
         }
-
-
-
-//        char response = '0';
-//        write(client_socket, &response, 1);
-
-//        printf("It was passed to the server: %s\n", str_in);
-//        close(client_socket);
-
     }
 
-        
-	sem_destroy(&semaforo);
-
-	close(server_socket);
-
-    return 0;
+    // destroy mutex
+    pthread_mutex_destroy(&mutex);
+    // close(server_socket);
 }

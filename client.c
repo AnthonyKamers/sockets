@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -28,19 +29,28 @@ int connect_socket() {
     return client_socket;
 }
 
-void write_text(char *text, int client_socket) {
+void write_to_server(char *text, int client_socket) {
     write(client_socket, text, 1024);
 
-    char response_server;
-    read(client_socket, &response_server, 1);
+    char response_server[256];
+    char answer[255];
+    read(client_socket, &response_server, 256);
+    strcpy(answer, response_server+1);
 
-    switch (response_server) {
+    switch (response_server[0]) {
         case '0':
-            printf("Writed to file. \n");
+            // write successfully
+            printf("Wrote to file successfully. \n");
             break;
         case '1':
-            printf("Error writing to file. \n");
+            // read successfully
+            printf("Content: %s \n", answer);
             break;
+        case '2':
+            // error reading
+            printf("Error reading line of the file \n");
+        case '3':
+            printf("Line index not in the range of the file \n");
         default:
             printf("Unexpected error. \n");
             break;
@@ -78,7 +88,7 @@ int main() {
                 break;
             case '1':
             case '2':
-                write_text((char *) &user_input, client_socket);
+                write_to_server((char *) &user_input, client_socket);
                 break;
             case '3':
                 close(client_socket);
